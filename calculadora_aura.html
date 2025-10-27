@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Aura</title>
+    <style>
+        :root{
+            --ok:#16a34a;
+            --danger:#b91c1c;
+            --ink:#111827;
+            --muted:#6b7280;
+        }
+        *{box-sizing:border-box}
+        body{
+            background:#fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            min-height:100vh;margin:0;color:var(--ink);
+            gap:16px;
+        }
+        h1{margin:0 0 8px 0;font-weight:800;letter-spacing:.2px}
+        .row{display:flex;gap:8px}
+        input[type="text"]{
+            padding:12px 14px;font-size:16px;min-width:280px;text-align:center;
+            border:1px solid #e5e7eb;border-radius:10px;outline:none;transition:.2s;
+        }
+        input[type="text"]:focus{border-color:#a3a3a3;box-shadow:0 0 0 3px #e5e7eb}
+        button{padding:12px 18px;border:none;border-radius:10px;cursor:pointer;font-weight:700;background:#111827;color:#fff}
+        button:hover{opacity:.9}
+
+        /* Hodômetro */
+        .hodometro{
+            display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px;
+            width:min(560px, 92vw);
+        }
+        .digits{
+            font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: clamp(40px, 8vw, 96px);
+            font-weight: 800; letter-spacing: 2px;
+            background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;
+            padding:8px 18px; min-width: 280px; text-align:center;
+            transition: transform .2s;
+        }
+        .units{font-size:14px;color:var(--muted)}
+        .bar{width:100%;height:12px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+        .fill{height:100%;width:0%;background:linear-gradient(90deg, #a7f3d0, #34d399);transition:width .08s linear}
+        .neg .fill{background:linear-gradient(90deg, #fecaca, #ef4444)}
+
+        /* Alerta/Explosão */
+        .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.9);z-index:50}
+        .overlay.show{display:flex;animation: flash 130ms ease-in-out 0s 5}
+        @keyframes flash{0%,100%{background:rgba(255,255,255,.9)}50%{background:rgba(255,0,0,.25)}}
+        .alerta{font-weight:900;text-align:center;color:#b91c1c;text-transform:uppercase;line-height:1.1}
+        .alerta .title{font-size: clamp(32px,6vw,64px);}
+        .alerta .subtitle{font-size: clamp(16px,3.5vw,28px);opacity:.9}
+        .boom{position:absolute;width:12px;height:12px;border-radius:999px;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.7);animation: boom 900ms ease-out forwards}
+        @keyframes boom{to{transform:scale(50);opacity:0;box-shadow:0 0 0 80vmax rgba(239,68,68,.05)}}
+        .shake{animation:shake .45s linear 0s 2}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+        .sr{font-size:12px;color:var(--muted)}
+    </style>
+</head>
+<body>
+    <h1>🔮 Calculadora de Aura</h1>
+    <div class="row">
+        <input type="text" id="nome" placeholder="Digite o nome" autocomplete="off"/>
+        <button id="btn">Calcular</button>
+    </div>
+
+    <div class="hodometro" id="hodometro">
+        <div class="digits" id="digits">0</div>
+        <div class="units">nível de aura</div>
+        <div class="bar" aria-hidden="true"><div class="fill" id="fill"></div></div>
+        <div class="sr" id="status" aria-live="polite"></div>
+    </div>
+
+    <div class="overlay" id="overlay" role="alert" aria-live="assertive">
+        <div class="alerta">
+            <div class="title">⚠️ ALERTA DE AURA NEGATIVA</div>
+            <div class="subtitle">ALERTA DE AURA NEGATIVA • ALERTA DE AURA NEGATIVA</div>
+        </div>
+    </div>
+
+    <script>
+      const input = document.getElementById('nome');
+      const btn = document.getElementById('btn');
+      const digits = document.getElementById('digits');
+      const fill = document.getElementById('fill');
+      const overlay = document.getElementById('overlay');
+      const status = document.getElementById('status');
+      const hodometro = document.getElementById('hodometro');
+
+      // Lista de nomes com aura negativa
+      const blacklist = new Set([
+        'arthur','leonardo','leo','cadu','eduardo','dudu','renan','junior','huhu','huanter'
+      ]);
+
+      function normalizarNome(s){
+        return (s||'')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/\p{Diacritic}/gu,'')
+          .trim();
+      }
+
+      function animateNumber(from, to, duration, onUpdate, onDone){
+        const start = performance.now();
+        function frame(now){
+          const t = Math.min(1, (now - start)/duration);
+          const val = Math.round(from + (to - from) * t);
+          onUpdate(val, t);
+          if(t < 1){ requestAnimationFrame(frame); } else { onDone && onDone(); }
+        }
+        requestAnimationFrame(frame);
+      }
+
+      function setBar(value){
+        // valor exibido de 0 a 100 para a barra; negativos mostram 0% mas ficam vermelhos
+        const clamped = Math.max(0, Math.min(100, value));
+        fill.style.width = clamped + '%';
+      }
+
+      function explode(){
+        // efeito de explosão e alerta
+        overlay.classList.add('show');
+        // pequeno "boom" no centro
+        const b = document.createElement('div');
+        b.className = 'boom';
+        b.style.left = '50%';
+        b.style.top = '50%';
+        b.style.transform = 'translate(-50%, -50%)';
+        document.body.appendChild(b);
+        setTimeout(()=> b.remove(), 1000);
+        // sacudir os dígitos
+        digits.classList.add('shake');
+        setTimeout(()=> digits.classList.remove('shake'), 900);
+      }
+
+      function resetEffects(){
+        overlay.classList.remove('show');
+      }
+
+      function calcularAura(){
+        resetEffects();
+        const nomeRaw = input.value;
+        const nome = normalizarNome(nomeRaw);
+
+        if(!nome){
+          status.textContent = 'Digite um nome para iniciar o hodômetro.';
+          return;
+        }
+
+        // Definir alvo
+        const isNeg = blacklist.has(nome);
+        const alvo = isNeg ? - (20 + Math.floor(Math.random()*81)) : (20 + Math.floor(Math.random()*81)); // -20..-100 ou 20..100
+
+        // UI inicial
+        hodometro.classList.toggle('neg', isNeg);
+        status.textContent = isNeg ? 'Detectando flutuações negativas…' : 'Medindo vibrações positivas…';
+        digits.textContent = '0';
+        setBar(0);
+
+        // Animação do hodômetro (3s)
+        animateNumber(0, alvo, 3000,
+          (val, t)=>{
+            digits.textContent = val;
+            setBar(val);
+          },
+          ()=>{
+            if(alvo < 0){
+              explode();
+            } else {
+              status.textContent = 'Aura estabilizada.';
+            }
+          }
+        );
+      }
+
+      btn.addEventListener('click', calcularAura);
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calcularAura(); });
+    </script>
+</body>
+</html>
