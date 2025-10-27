@@ -1,185 +1,193 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Aura</title>
-    <style>
-        :root{
-            --ok:#16a34a;
-            --danger:#b91c1c;
-            --ink:#111827;
-            --muted:#6b7280;
-        }
-        *{box-sizing:border-box}
-        body{
-            background:#fff;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-            display:flex;flex-direction:column;align-items:center;justify-content:center;
-            min-height:100vh;margin:0;color:var(--ink);
-            gap:16px;
-        }
-        h1{margin:0 0 8px 0;font-weight:800;letter-spacing:.2px}
-        .row{display:flex;gap:8px}
-        input[type="text"]{
-            padding:12px 14px;font-size:16px;min-width:280px;text-align:center;
-            border:1px solid #e5e7eb;border-radius:10px;outline:none;transition:.2s;
-        }
-        input[type="text"]:focus{border-color:#a3a3a3;box-shadow:0 0 0 3px #e5e7eb}
-        button{padding:12px 18px;border:none;border-radius:10px;cursor:pointer;font-weight:700;background:#111827;color:#fff}
-        button:hover{opacity:.9}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora de Aura</title>
+  <style>
+    :root{
+      --ok:#16a34a; --danger:#b91c1c; --ink:#111827; --muted:#6b7280;
+    }
+    *{box-sizing:border-box}
+    body{
+      background:#fff; color:var(--ink);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      min-height:100vh; margin:0; padding:16px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+      transition:filter .3s ease;
+    }
+    body.calculating{ filter:saturate(1.2) contrast(1.02); animation:hue 6s linear infinite; }
+    @keyframes hue{ from{filter:hue-rotate(0deg) saturate(1.2)} to{filter:hue-rotate(360deg) saturate(1.2)} }
 
-        /* Hodômetro */
-        .hodometro{
-            display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px;
-            width:min(560px, 92vw);
-        }
-        .digits{
-            font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-            font-size: clamp(40px, 8vw, 96px);
-            font-weight: 800; letter-spacing: 2px;
-            background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;
-            padding:8px 18px; min-width: 280px; text-align:center;
-            transition: transform .2s;
-        }
-        .units{font-size:14px;color:var(--muted)}
-        .bar{width:100%;height:12px;background:#f3f4f6;border-radius:999px;overflow:hidden}
-        .fill{height:100%;width:0%;background:linear-gradient(90deg, #a7f3d0, #34d399);transition:width .08s linear}
-        .neg .fill{background:linear-gradient(90deg, #fecaca, #ef4444)}
+    h1{margin:0 0 8px; font-weight:800; letter-spacing:.2px; text-align:center}
+    .row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
+    input[type="text"]{
+      padding:14px 16px; font-size:16px; min-width:280px; text-align:center;
+      border:1px solid #e5e7eb; border-radius:12px; outline:none; transition:.2s;
+    }
+    input[type="text"]:focus{border-color:#a3a3a3; box-shadow:0 0 0 3px #e5e7eb}
+    button{
+      padding:14px 20px; border:none; border-radius:12px; cursor:pointer;
+      background:#111827; color:#fff; font-weight:800; font-size:16px; letter-spacing:.3px;
+    }
+    button:active{transform:translateY(1px)}
 
-        /* Alerta/Explosão */
-        .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.9);z-index:50}
-        .overlay.show{display:flex;animation: flash 130ms ease-in-out 0s 5}
-        @keyframes flash{0%,100%{background:rgba(255,255,255,.9)}50%{background:rgba(255,0,0,.25)}}
-        .alerta{font-weight:900;text-align:center;color:#b91c1c;text-transform:uppercase;line-height:1.1}
-        .alerta .title{font-size: clamp(32px,6vw,64px);}
-        .alerta .subtitle{font-size: clamp(16px,3.5vw,28px);opacity:.9}
-        .boom{position:absolute;width:12px;height:12px;border-radius:999px;background:#ef4444;box-shadow:0 0 0 0 rgba(239,68,68,.7);animation: boom 900ms ease-out forwards}
-        @keyframes boom{to{transform:scale(50);opacity:0;box-shadow:0 0 0 80vmax rgba(239,68,68,.05)}}
-        .shake{animation:shake .45s linear 0s 2}
-        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-        .sr{font-size:12px;color:var(--muted)}
-    </style>
+    /* Hodômetro */
+    .hodometro{ display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; width:min(620px,94vw); }
+    .digits{
+      font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      font-size:clamp(44px,9vw,108px); font-weight:900; letter-spacing:2px;
+      background:#f8fafc; border:1px solid #e5e7eb; border-radius:18px;
+      padding:10px 22px; min-width:300px; text-align:center; transition:transform .2s;
+    }
+    .units{font-size:14px; color:var(--muted)}
+    .bar{width:100%; height:14px; background:#f3f4f6; border-radius:999px; overflow:hidden}
+    .fill{height:100%; width:0%; background:linear-gradient(90deg,#a7f3d0,#34d399); transition:width .08s linear}
+    .neg .fill{background:linear-gradient(90deg,#fecaca,#ef4444)}
+
+    /* Interpretação */
+    .interprete{margin-top:8px; font-size:16px; text-align:center; color:#374151; min-height:1.8em}
+
+    /* Alerta/Explosão */
+    .overlay{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(255,255,255,.9); z-index:50}
+    .overlay.show{display:flex; animation:flash 130ms ease-in-out 0s 5}
+    @keyframes flash{0%,100%{background:rgba(255,255,255,.9)}50%{background:rgba(255,0,0,.25)}}
+    .alerta{font-weight:900; text-align:center; color:#b91c1c; text-transform:uppercase; line-height:1.1; padding:8px}
+    .alerta .title{font-size:clamp(32px,6vw,64px)}
+    .alerta .subtitle{font-size:clamp(16px,3.5vw,28px); opacity:.9}
+    .boom{position:absolute; width:12px; height:12px; border-radius:999px; background:#ef4444; box-shadow:0 0 0 0 rgba(239,68,68,.7); animation:boom 900ms ease-out forwards}
+    @keyframes boom{to{transform:scale(50); opacity:0; box-shadow:0 0 0 80vmax rgba(239,68,68,.05)}}
+    .shake{animation:shake .45s linear 0s 2}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+    .sr{font-size:12px; color:var(--muted)}
+  </style>
 </head>
 <body>
-    <h1>🔮 Calculadora de Aura</h1>
-    <div class="row">
-        <input type="text" id="nome" placeholder="Digite o nome" autocomplete="off"/>
-        <button id="btn">Calcular</button>
+  <h1>🔮 Calculadora de Aura</h1>
+
+  <div class="row">
+    <input type="text" id="nome" placeholder="Digite o nome" autocomplete="off" />
+    <button id="btn">Calcular</button>
+  </div>
+
+  <div class="hodometro" id="hodometro">
+    <div class="digits" id="digits">0</div>
+    <div class="units">nível de aura</div>
+    <div class="bar" aria-hidden="true"><div class="fill" id="fill"></div></div>
+    <div class="interprete" id="interprete"></div>
+    <div class="sr" id="status" aria-live="polite"></div>
+  </div>
+
+  <div class="overlay" id="overlay" role="alert" aria-live="assertive">
+    <div class="alerta">
+      <div class="title">⚠️ ALERTA DE AURA NEGATIVA</div>
+      <div class="subtitle">ALERTA DE AURA NEGATIVA • ALERTA DE AURA NEGATIVA</div>
     </div>
+  </div>
 
-    <div class="hodometro" id="hodometro">
-        <div class="digits" id="digits">0</div>
-        <div class="units">nível de aura</div>
-        <div class="bar" aria-hidden="true"><div class="fill" id="fill"></div></div>
-        <div class="sr" id="status" aria-live="polite"></div>
-    </div>
+  <script>
+    const input = document.getElementById('nome');
+    const btn = document.getElementById('btn');
+    const digits = document.getElementById('digits');
+    const fill = document.getElementById('fill');
+    const overlay = document.getElementById('overlay');
+    const status = document.getElementById('status');
+    const hodometro = document.getElementById('hodometro');
+    const interprete = document.getElementById('interprete');
 
-    <div class="overlay" id="overlay" role="alert" aria-live="assertive">
-        <div class="alerta">
-            <div class="title">⚠️ ALERTA DE AURA NEGATIVA</div>
-            <div class="subtitle">ALERTA DE AURA NEGATIVA • ALERTA DE AURA NEGATIVA</div>
-        </div>
-    </div>
+    // nomes com aura negativa
+    const blacklist = new Set(['arthur','leonardo','leo','cadu','eduardo','dudu','renan','junior','huhu','huanter']);
 
-    <script>
-      const input = document.getElementById('nome');
-      const btn = document.getElementById('btn');
-      const digits = document.getElementById('digits');
-      const fill = document.getElementById('fill');
-      const overlay = document.getElementById('overlay');
-      const status = document.getElementById('status');
-      const hodometro = document.getElementById('hodometro');
+    function normalizarNome(s){
+      return (s||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').trim();
+    }
 
-      // Lista de nomes com aura negativa
-      const blacklist = new Set([
-        'arthur','leonardo','leo','cadu','eduardo','dudu','renan','junior','huhu','huanter'
-      ]);
-
-      function normalizarNome(s){
-        return (s||'')
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/\p{Diacritic}/gu,'')
-          .trim();
+    function animateNumber(from, to, duration, onUpdate, onDone){
+      const start = performance.now();
+      function frame(now){
+        const t = Math.min(1, (now - start)/duration);
+        const eased = t < .5 ? 2*t*t : -1 + (4-2*t)*t; // ease in-out
+        const val = Math.round(from + (to - from) * eased);
+        onUpdate(val, t);
+        if (t < 1) requestAnimationFrame(frame); else onDone && onDone();
       }
+      requestAnimationFrame(frame);
+    }
 
-      function animateNumber(from, to, duration, onUpdate, onDone){
-        const start = performance.now();
-        function frame(now){
-          const t = Math.min(1, (now - start)/duration);
-          const val = Math.round(from + (to - from) * t);
-          onUpdate(val, t);
-          if(t < 1){ requestAnimationFrame(frame); } else { onDone && onDone(); }
-        }
-        requestAnimationFrame(frame);
-      }
+    function setBar(value){
+      const clamped = Math.max(0, Math.min(100, value));
+      fill.style.width = clamped + '%';
+    }
 
-      function setBar(value){
-        // valor exibido de 0 a 100 para a barra; negativos mostram 0% mas ficam vermelhos
-        const clamped = Math.max(0, Math.min(100, value));
-        fill.style.width = clamped + '%';
-      }
+    // Beep via WebAudio (sem arquivo)
+    let audioCtx;
+    function playBeep(freq=520, duration=160, type='square', volume=0.05){
+      try{
+        audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.value = volume; osc.connect(gain); gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        osc.start(now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration/1000);
+        osc.stop(now + duration/1000);
+      }catch(e){ /* sem áudio */ }
+    }
+    function vibrate(p){ if (navigator.vibrate) navigator.vibrate(p); }
 
-      function explode(){
-        // efeito de explosão e alerta
-        overlay.classList.add('show');
-        // pequeno "boom" no centro
-        const b = document.createElement('div');
-        b.className = 'boom';
-        b.style.left = '50%';
-        b.style.top = '50%';
-        b.style.transform = 'translate(-50%, -50%)';
-        document.body.appendChild(b);
-        setTimeout(()=> b.remove(), 1000);
-        // sacudir os dígitos
-        digits.classList.add('shake');
-        setTimeout(()=> digits.classList.remove('shake'), 900);
-      }
+    function explode(){
+      overlay.classList.add('show');
+      const b = document.createElement('div');
+      b.className = 'boom'; b.style.left='50%'; b.style.top='50%'; b.style.transform='translate(-50%, -50%)';
+      document.body.appendChild(b);
+      setTimeout(()=> b.remove(), 1000);
+      digits.classList.add('shake'); setTimeout(()=> digits.classList.remove('shake'), 900);
+      // 3 beeps + vibração
+      playBeep(520,140); setTimeout(()=>playBeep(520,140),160); setTimeout(()=>playBeep(520,220),320);
+      vibrate([60,60,120]);
+    }
 
-      function resetEffects(){
-        overlay.classList.remove('show');
-      }
+    function resetEffects(){
+      overlay.classList.remove('show');
+      document.body.classList.remove('calculating');
+    }
 
-      function calcularAura(){
-        resetEffects();
-        const nomeRaw = input.value;
-        const nome = normalizarNome(nomeRaw);
+    function interpret(value, isNeg){
+      if (isNeg) return 'Campos energéticos instáveis — evite decisões importantes hoje.';
+      if (value < 40) return 'Aura baixa: foque em descanso e água.';
+      if (value < 60) return 'Aura equilibrada: bom momento para tarefas rotineiras.';
+      if (value < 80) return 'Aura elevada: aproveite para resolver o que exige energia.';
+      return 'Aura lendária: carisma no talo, momento de brilhar!';
+    }
 
-        if(!nome){
-          status.textContent = 'Digite um nome para iniciar o hodômetro.';
-          return;
-        }
+    function calcularAura(){
+      resetEffects();
+      const nomeRaw = input.value;
+      const nome = normalizarNome(nomeRaw);
+      if (!nome){ status.textContent = 'Digite um nome para iniciar o hodômetro.'; return; }
 
-        // Definir alvo
-        const isNeg = blacklist.has(nome);
-        const alvo = isNeg ? - (20 + Math.floor(Math.random()*81)) : (20 + Math.floor(Math.random()*81)); // -20..-100 ou 20..100
+      const isNeg = blacklist.has(nome);
+      const alvo = isNeg ? -(20 + Math.floor(Math.random()*81)) : (20 + Math.floor(Math.random()*81)); // -20..-100 ou 20..100
 
-        // UI inicial
-        hodometro.classList.toggle('neg', isNeg);
-        status.textContent = isNeg ? 'Detectando flutuações negativas…' : 'Medindo vibrações positivas…';
-        digits.textContent = '0';
-        setBar(0);
+      hodometro.classList.toggle('neg', isNeg);
+      status.textContent = isNeg ? 'Detectando flutuações negativas…' : 'Medindo vibrações positivas…';
+      interprete.textContent = '';
+      digits.textContent = '0'; setBar(0);
+      document.body.classList.add('calculating');
 
-        // Animação do hodômetro (3s)
-        animateNumber(0, alvo, 3000,
-          (val, t)=>{
-            digits.textContent = val;
-            setBar(val);
-          },
-          ()=>{
-            if(alvo < 0){
-              explode();
-            } else {
-              status.textContent = 'Aura estabilizada.';
-            }
-          }
-        );
-      }
+      animateNumber(0, alvo, 3200, (val)=>{ digits.textContent = val; setBar(val); }, ()=>{
+        document.body.classList.remove('calculating');
+        if (alvo < 0) explode();
+        status.textContent = 'Leitura concluída.';
+        interprete.textContent = interpret(Math.abs(alvo), isNeg);
+        if (!isNeg) playBeep(880,120,'sine',0.04);
+      });
+    }
 
-      btn.addEventListener('click', calcularAura);
-      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calcularAura(); });
-    </script>
+    btn.addEventListener('click', calcularAura);
+    input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') calcularAura(); });
+  </script>
 </body>
 </html>
